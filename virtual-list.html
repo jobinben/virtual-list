@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>virtual list</title>
+        <style>
+            #list-view {
+                width: 200px;
+                height: 350px;
+                overflow: auto;
+                position: relative;
+                border: 1px solid saddlebrown;
+                /* -webkit-overflow-scrolling: touch; */
+            }
+            #list-view-phantom {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                z-index: -1;
+            }
+            #list-view-content{
+                left: 0;
+                right: 0;
+                top: 0;
+                position: absolute;
+            }
+            .list-view-item {
+                height: 35px;
+                line-height: 35px;
+                box-sizing: border-box;
+                text-align: center;
+                border-bottom: 1px solid #999;
+            }
+        </style>
+    </head>
+    <body>
+        
+        <div id="list-view">
+            <div id="list-view-phantom"></div>
+            <div id="list-view-content"></div>
+        </div>
+
+        <script>
+            const screenHeight = 350; // 容器高度
+            const listData = generateDate(100000); // 总数据 生成多少条都可以
+            const itemSize = 35; // 每条数据的高度
+            const listHeight = (listData.length * itemSize) + 'px'; // 撑起高度展示的滚动条显示的总高度
+            let visibleCount = Math.ceil(screenHeight / itemSize); // 可视区域显示的条数
+            let visibleData = listData.slice(0, Math.min(visibleCount, listData.length)); // 初始化可视数据
+
+            let startIndex = 0; // 头索引
+            let endIndex = visibleCount; // 尾索引
+            let startOffset = 0; // 偏移量
+
+            // 生成数据
+            function generateDate(n) {
+                const d = [];
+                for(let i =0; i < n; i++) {
+                    d.push({id: i, value: i});
+                }
+                return d;
+            }
+
+            // 初始化DOM
+            function initContent() {
+                const cEl = document.getElementById('list-view-content');
+                for(let start = 0; start < visibleData.length; start++) {
+                    const divEl = document.createElement('div');
+                    divEl.className = 'list-view-item';
+                    divEl.textContent = listData[start].value;
+                    cEl.appendChild(divEl);
+                }
+            }
+
+            // 重新渲染DOM
+            function renderer(start, end) {
+                const cEl = document.getElementById('list-view-content');
+                destroyChild(cEl);
+                cEl.style.transform = `translate3d(0,${startOffset}px,0)`;
+                for(; start < end; start++) {
+                    const divEl = document.createElement('div');
+                    divEl.className = 'list-view-item';
+                    divEl.textContent = listData[start].value;
+                    cEl.appendChild(divEl);
+                }
+
+            } 
+
+            // 销毁所有子节点
+            function destroyChild(el) {
+                while(el.firstChild) {
+                    el.removeChild(el.firstChild);
+                }
+            }
+
+            // 设置
+            function setListHeight() {
+                const pEl = document.getElementById('list-view-phantom');
+                pEl.style.height = listHeight;
+            }
+
+            // 初始化
+            function init() {
+                initContent();
+                setListHeight();
+            }
+
+            // 监听滚动
+            const vEl = document.getElementById('list-view');
+            vEl.addEventListener('scroll', (e) => {
+                let currentTop = e.target.scrollTop; // 当前滚动位置
+                let start = Math.floor(currentTop / itemSize); // 当前头索引
+                if(startIndex !== start) { // 索引变化再渲染DOM
+                    startIndex = start;
+                    endIndex = startIndex + visibleCount; // 当前的尾索引
+                    startOffset = currentTop - (currentTop % itemSize); // 偏移量
+                    renderer(startIndex, endIndex);
+                }
+                console.log('startIndex: ', startIndex, 'endIndex: ', endIndex, 'startOffset: ', startOffset);
+            })
+            
+            init();
+
+        </script>
+    </body>
+</html>
